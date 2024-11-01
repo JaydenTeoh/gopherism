@@ -1,7 +1,9 @@
+
+
 ## Features
 
 - Make and send Gopher requests with the `Request` class
-- URL parsing with `pituophis.parse_url()`
+- URL parsing with `gopher.parse_url()`
 - Parse and iterate through Gopher menus with `Response.menu()`
 - Host Gopher servers on Python 3.7+, accepting requests asynchronously (using the same `Request` class)
 - Serve directories, files, and gophermaps out of the box from a publish directory ('pub/' by default) with the default handler
@@ -31,9 +33,12 @@ python vf1.py
 You should see the VF-1 command line Gopher client appear. To enable TLS encryption, type `tls`. To go to your hosted gopher site, enter `go gopher://localhost:<PORT>`. See the images below for an example interaction.
 
 **Localhost**
+
 ![VF-1 Localhost interaction](./assets/vf1_localhost_demo.png)
 
 **Public Gopher Site**
+
+
 ![VF-1 Public interaction](./assets/vf1_public_demo.png)
 
 
