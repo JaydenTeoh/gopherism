@@ -16,8 +16,6 @@ python cli.py serve -H 127.0.0.1 -p 443 -d pub/ -tls
 - `-d`: directory to serve gopher items from (default: 'pub/')
 - `-tls`: indicates to enable TLS encryption (default: False)
 
-For analyzing packets over Wireshark, default port should be 443. To verify, go `Wireshark > Preferences > Protocols > HTTP` to see the default port number for "SSL/TLS Ports" in settings. It is important to match the port else the TLS packets won't be labelled properly.
-
 To spin up a Gopher client, I am using [VF-1](https://git.sr.ht/~solderpunk/VF-1). After running the above CLI command, in a separate terminal, do:
 ```
 python vf1.py
@@ -54,7 +52,7 @@ if self.tls:
     context.verify_mode = ssl.CERT_NONE  # Disable certificate verification
     s = context.wrap_socket(s, server_hostname = gi.host)
 ```
-This allows us to bypass the certificate verfication error. You should start seeing TLS-encrypted packets appear in Wireshark when you filter for `tls`:
+This allows us to bypass the certificate verfication error. For analyzing packets over Wireshark, default port should be 443. To verify, go `Wireshark > Preferences > Protocols > HTTP` to see the default port number for "SSL/TLS Ports" in settings. It is important to match the port else the TLS packets won't be labelled properly. You should start seeing TLS-encrypted packets appear in Wireshark when you filter for `tls`:
 ![TLS Wireshark Packets](./assets/tls_packets.png)
 
 
