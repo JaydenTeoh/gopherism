@@ -1,13 +1,5 @@
+# Gopherism
 
-
-## Features
-
-- Make and send Gopher requests with the `Request` class
-- URL parsing with `gopher.parse_url()`
-- Parse and iterate through Gopher menus with `Response.menu()`
-- Host Gopher servers on Python 3.7+, accepting requests asynchronously (using the same `Request` class)
-- Serve directories, files, and gophermaps out of the box from a publish directory ('pub/' by default) with the default handler
-- Use either a custom handler altogether or a handler to use when the default handler encounters a 404 for dynamic functionality
 
 ## Installation
 ```
