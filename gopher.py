@@ -39,6 +39,8 @@ from urllib.parse import urlparse
 
 from natsort import natsorted
 
+mimetypes.add_type('application/pdf', '.pdf')
+
 # Quick note:
 # item types are not sent to the server, just the selector/path of the resource
 
@@ -335,7 +337,8 @@ mime_starts_with = {
     'text': '0',
     'audio/x-wav': 's',
     'image/gif': 'g',
-    'text/html': 'h'
+    'text/html': 'h',
+    'application/pdf': '9'
 }
 
 errors = {
@@ -560,6 +563,12 @@ def handle(request):
                                        tls=request.tls)
             return menu
     elif os.path.isfile(res_path):
+        mime_type, _ = mimetypes.guess_type(res_path)
+        if mime_type == 'application/pdf':
+            with open(res_path, "rb") as in_file:
+                data = in_file.read()
+            return data
+        
         in_file = open(res_path, "rb")
         data = in_file.read()
         in_file.close()
