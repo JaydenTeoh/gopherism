@@ -12,9 +12,11 @@ Start the Gopher server using:
 python cli.py serve -H 127.0.0.1 -p 443 -d pub/ -tls
 ```
 - `-H`: advertised host (default: 127.0.0.1)
-- `-p`: port to use (default: 70)
+- `-p`: port to use for Gopher (default: 70)
 - `-d`: directory to serve gopher items from (default: 'pub/')
 - `-tls`: indicates to enable TLS encryption (default: False)
+- `-http`: indicates to create a HTTP server that runs in separate thread (default: False)
+- `-http_port`: port to use for HTTP (default: 8080)
 
 To spin up a Gopher client, I am using [VF-1](https://git.sr.ht/~solderpunk/VF-1). After running the above CLI command, in a separate terminal, do:
 ```

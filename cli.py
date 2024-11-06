@@ -55,6 +55,14 @@ else:
             tls=True  # Ensure TLS is enabled
             tls_cert_chain='tls/cacert.pem'  # Path to your certificate
             tls_private_key='tls/privkey.pem'  # Path to your private key
+
+        # http
+        http = False
+        http_port = 8080
+        if '-http' in sys.argv:
+            http=True
+            if '--http-port' in sys.argv:
+                http_port = int(sys.argv[sys.argv.index('--http-port') + 1])
         
         # send period
         send_period = False
@@ -68,6 +76,7 @@ else:
         gopher.serve(host=host, port=port, advertised_port=advertised_port, 
                     tls=tls, tls_cert_chain=tls_cert_chain, tls_private_key=tls_private_key,
                     handler=gopher.handle, pub_dir=pub_dir, alt_handler=alt_handler,
+                    run_http=http, http_port=http_port,
                     send_period=send_period, debug=debug)
     elif sys.argv[1] == 'fetch':
         # check for arguments

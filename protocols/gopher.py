@@ -1,33 +1,8 @@
-# BSD 2-Clause License
-#
-# Copyright (c) 2020, dotcomboom <dotcomboom@somnolescent.net> and contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# * Redistributions of source code must retain the above copyright notice, this
-#   List of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this List of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Portions copyright solderpunk & VF-1 contributors, licensed under the BSD 2-Clause License above.
-
 import asyncio
 import glob
+import urllib
+import http.server
+from threading import Thread
 import mimetypes
 import os
 import re
@@ -40,9 +15,6 @@ from urllib.parse import urlparse
 from natsort import natsorted
 
 mimetypes.add_type('application/pdf', '.pdf')
-
-# Quick note:
-# item types are not sent to the server, just the selector/path of the resource
 
 
 class Response:
@@ -586,7 +558,7 @@ def handle(request):
 
 def serve(host="127.0.0.1", port=70, advertised_port=None,
           handler=handle, pub_dir='pub/', alt_handler=False,
-          send_period=False, tls=False,
+          send_period=False, tls=False, run_http=False, http_port=8080,
           tls_cert_chain='cacert.pem',
           tls_private_key='privkey.pem', debug=True):
     """
@@ -666,12 +638,109 @@ Note that clients may refuse to connect to a self-signed certificate.
             if debug:
                 print('Connection closed')
 
+    class HTTPHandler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            parsed_path = urllib.parse.urlparse(self.path)
+            path = parsed_path.path
+
+            if path == '/':
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
+                self.wfile.write(b"<html><head><title>Gopher over HTTP</title></head>")
+                self.wfile.write(b"<body><h1>Welcome to the Gopher over HTTP server</h1>")
+                self.wfile.write(b'<ul><li><a href="/pub/">Browse Gopher pub directory</a></li></ul>')
+                self.wfile.write(b"</body></html>")
+                return
+
+            if path.startswith('/pub/'):
+                relative_path = path[len('/pub/'):]
+            else:
+                relative_path = path.lstrip('/')
+
+            response, mime_type = self.handle_http_gopher_request(relative_path)
+
+            if isinstance(response, bytes):
+                self.send_response(200)
+                self.send_header("Content-type", mime_type)
+                self.end_headers()
+                self.wfile.write(response)
+            else:
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
+                self.wfile.write(b"<html><body>")
+                self.wfile.write(response.encode())
+                self.wfile.write(b"</body></html>")
+
+        def handle_http_gopher_request(self, path):
+            file_path = os.path.join(pub_dir, path)
+
+            # Check if directory contains a gophermap and use it if present
+            if os.path.isdir(file_path):
+                gophermap_path = os.path.join(file_path, 'gophermap')
+                if os.path.isfile(gophermap_path):
+                    # Parse gophermap as Gopher menu
+                    response = "<h2>Gopher Menu</h2><div>"
+                    with open(gophermap_path, 'r') as f:
+                        for line in f:
+                            line = line.rstrip('\n')
+                            if line:
+                                item_type = line[0]
+                                parts = line[1:].split('\t')
+                                label = parts[0]
+                                item_path = parts[1] if len(parts) > 1 else ''
+                                # Map Gopher item types to HTML format
+                                if item_type == '1':  # Directory
+                                    item_path = item_path.strip('/')
+                                    response += f'<div><a href="/pub/{item_path}">{label}/</a></div>'
+                                elif item_type == '0':  # Text file
+                                    item_path = item_path.rstrip('/')
+                                    response += f'<div><a href="/pub/{item_path}">{label}</a></div>'
+                                elif item_type == 'i':  # Informational text
+                                    response += f'<pre>{label}<br/></pre>'  # Line break for 'i' items
+                                else:  # Fallback for unknown types
+                                    item_path = item_path.rstrip('/')
+                                    response += f'<div><a href="/pub/{item_path}">{label}</a></div>'
+                    response += "</div>"
+                    return response, "text/html"
+                else:
+                    # No gophermap, fallback to directory listing
+                    entries = os.listdir(file_path)
+                    response = f"<h2>Directory listing for /pub/{path}</h2><div>"
+                    for entry in entries:
+                        entry_path = os.path.join(path, entry)
+                        if os.path.isdir(os.path.join(pub_dir, entry_path)):
+                            response += f'<div><a href="/pub/{entry_path}/">{entry}/</a></div>'
+                        else:
+                            response += f'<div><a href="/pub/{entry_path}">{entry}</a></div>'
+                    response += "</div>"
+                    return response, "text/html"
+
+            elif os.path.isfile(file_path):
+                mime_type, _ = mimetypes.guess_type(file_path)
+                with open(file_path, 'rb') as f:
+                    return f.read(), mime_type or 'application/octet-stream'
+
+            return "<h2>Error: Resource not found</h2>", "text/html"
+        
+    def run_http_server():
+        httpd = http.server.HTTPServer(('localhost', http_port), HTTPHandler)
+        print(f"HTTP wrapper running on http://localhost:{http_port}")
+        httpd.serve_forever()
+
     async def main(h, p):
         loop = asyncio.get_running_loop()
         if tls:
             server = await loop.create_server(GopherProtocol, h, p, ssl=context)
         else:
             server = await loop.create_server(GopherProtocol, h, p)
+        
+        if run_http:
+            http_thread = Thread(target=run_http_server)
+            http_thread.start()
+            print("HTTP server running in a separate thread.")
+        
         await server.serve_forever()
 
     asyncio.run(main('0.0.0.0', port))
