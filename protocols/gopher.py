@@ -695,13 +695,13 @@ Note that clients may refuse to connect to a self-signed certificate.
                                     item_path = item_path.strip('/')
                                     response += f'<div><a href="/pub/{item_path}">{label}/</a></div>'
                                 elif item_type == '0':  # Text file
-                                    item_path = item_path.rstrip('/')
+                                    item_path = item_path.strip('/')
                                     response += f'<div><a href="/pub/{item_path}">{label}</a></div>'
                                 elif item_type == 'i':  # Informational text
                                     response += f'<pre>{label}<br/></pre>'  # Line break for 'i' items
                                 else:  # Fallback for unknown types
-                                    item_path = item_path.rstrip('/')
-                                    response += f'<div><a href="/pub/{item_path}">{label}</a></div>'
+                                    item_path = item_path.strip('/')
+                                    response += f'<div><a href="/{item_path}">{label}</a></div>'
                     response += "</div>"
                     return response, "text/html"
                 else:
