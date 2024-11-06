@@ -41,6 +41,6 @@ if files:
     if 0 <= choice < len(files):
         selected_file = files[choice]
         file_url = f"{server_url}/download/{selected_file}"
-        download_file(file_url, selected_file)
+        download_file(file_url, "downloaded/"+selected_file)
     else:
         print("Invalid selection.")
