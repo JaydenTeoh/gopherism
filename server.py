@@ -1,4 +1,4 @@
-import gopher
+import protocols.gopher as gopher
 
 def alt(request):
     if request.path == '/':
