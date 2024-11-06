@@ -20,6 +20,10 @@ settings = {
     'typestrings': True, # Allow filtering searches by type, i.e. /search01 for textfiles and directories.
     'root_path': '/',  # Path to link to on the results page
     'allow_empty_queries': False,  # Whether to allow empty search queries
+
+    # Comments
+    'comments': [],  # Comments to display
+    'comments_path': '/comment',  # Path to view comments
     
     # Below lines can be disabled by setting them to None
     'root_text': 'Back to root',
@@ -81,6 +85,32 @@ def alt(request):
                                     menu.append(Item(text='  ' + referrer))
                     except:
                         pass
+        return menu
+    elif request.path.startswith(settings['comments_path']):
+        # Append the new comment (from `query`) to the comments list
+        if request.query:
+            settings['comments'].append(request.query)
+            menu = [Item(text="Comment added! Thank you."),
+                    Item(itype='1', text="View comments", path="/", host=request.host, port=request.port)]
+        else:
+            # If no comment text was entered, prompt the user again
+            menu = [Item(text="No comment provided! Please try again."),
+                    Item(itype='7', text="Add a comment.", path=settings['comments_path'], host=request.host, port=request.port)]
+            return menu
+
+        # Default path to view comments
+        menu = [Item(text='Welcome to the Comment Section!'),
+                Item(),  # Blank line
+                Item(itype='7', text="Add a comment.", path=settings['comments_path'], host=request.host, port=request.port),
+                Item()]  # Blank line
+
+        # Display all comments if any exist
+        if len(settings['comments']) == 0:
+            menu.append(Item(text="There are no messages yet... be the first!"))
+        else:
+            for entry in settings['comments']:
+                menu.append(Item(text=str(entry)))
+
         return menu
     else:
         e = copy.copy(errors['404'])

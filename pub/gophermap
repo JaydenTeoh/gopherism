@@ -10,5 +10,6 @@ i    \_____\/   \_____\/ \_\/     \__\/ \::\/ \_____\/ \_\/ \_\/\________\/ \___
 1Home page	/home	127.0.0.1	70
 1About page	/about	127.0.0.1	70
 7Search for all types	/search
+7Add a comment	/comment
 1Download pdf	/LA4CS-Chapter-11.pdf	127.0.0.1	70
 0Readme	/readme.txt	127.0.0.1	70
