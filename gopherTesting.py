@@ -1,38 +1,31 @@
 import subprocess
 import time
+import argparse
 
-# Set the file path and server URL
+# Set up argument parsing
+parser = argparse.ArgumentParser(description="Download a file multiple times and measure download times.")
+parser.add_argument("-n", "--num-downloads", type=int, default=10, help="Number of times to download the file")
+args = parser.parse_args()
+
+# File path and server URL
 file_name = "LA4CS-Chapter-11.pdf"
 server_url = "gophers://localhost:443/9/LA4CS-Chapter-11.pdf"
 
 download_times = []
+num_downloads = args.num_downloads
 
-# Download the same file 10 times
-for i in range(10):
+# Download the file multiple times
+for i in range(1, num_downloads + 1):
     start_time = time.time()
     subprocess.run(["curl", "-k", server_url, "-o", file_name])
     end_time = time.time()
     download_time = end_time - start_time
     download_times.append(download_time)
-    print(f"Download {i + 1}: {download_time:.2f} seconds")
+    print(f"Download {i}: {download_time:.5f} seconds")
 
-#     # Download the same file 100 times
-# for i in range(10):
-#     start_time = time.time()
-#     subprocess.run(["curl", "-k", server_url, "-o", file_name])
-#     end_time = time.time()
-#     download_time = end_time - start_time
-#     download_times.append(download_time)
-#     print(f"Download {i + 1}: {download_time:.2f} seconds")
+# Calculate average and total download times
+average_time = sum(download_times) / num_downloads
+total_time = sum(download_times)
 
-#     # Download the same file 1000 times
-# for i in range(1000):
-#     start_time = time.time()
-#     subprocess.run(["curl", "-k", server_url, "-o", file_name])
-#     end_time = time.time()
-#     download_time = end_time - start_time
-#     download_times.append(download_time)
-#     print(f"Download {i + 1}: {download_time:.2f} seconds")
-
-print("\nDownload times for each attempt:", download_times)
-print("Average download time:", sum(download_times) / len(download_times))
+print(f"\nAverage download time for {num_downloads} downloads: {average_time:.5f} seconds")
+print(f"Total download time: {total_time:.5f} seconds")
