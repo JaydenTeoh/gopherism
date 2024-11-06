@@ -1,6 +1,6 @@
 import importlib
 import sys
-import gopher
+import protocols.gopher as gopher
 
 # check if the user is running the script with the correct number of arguments
 if len(sys.argv) < 2:

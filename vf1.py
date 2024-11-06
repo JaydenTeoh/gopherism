@@ -73,12 +73,12 @@ _ITEMTYPE_TO_MIME = {
 }
 
 _MIME_HANDLERS = {
-    "application/pdf":      "xpdf %s",
-    "audio/mpeg":           "mpg123 %s",
-    "audio/ogg":            "ogg123 %s",
-    "image/*":              "feh %s",
+    "application/pdf":      "start %s",
+    "audio/mpeg":           "start %s",
+    "audio/ogg":            "start %s",
+    "image/*":              "start %s",
     "text/*":               "cat %s",
-    "text/html":            "lynx -dump -force_html %s",
+    "text/html":            "cat %s",
 }
 
 # Item type formatting stuff
@@ -514,7 +514,7 @@ enable automatic encoding detection.""")
                 break
         else:
             # Use "xdg-open" as a last resort.
-            cmd_str = "xdg-open %s"
+            cmd_str = "start %s"
         self._debug("Using handler: %s" % cmd_str)
         return cmd_str
 
