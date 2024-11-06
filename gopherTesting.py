@@ -3,13 +3,14 @@ import time
 import argparse
 
 # Set up argument parsing
-parser = argparse.ArgumentParser(description="Download a file multiple times and measure download times.")
+parser = argparse.ArgumentParser(description="Download a file multiple times from a Gopher server and measure download times.")
 parser.add_argument("-n", "--num-downloads", type=int, default=10, help="Number of times to download the file")
+parser.add_argument("-p", "--port", type=int, default=443, help="Port number of the Gopher server (default: 443)")
 args = parser.parse_args()
 
 # File path and server URL
 file_name = "LA4CS-Chapter-11.pdf"
-server_url = "gophers://localhost:443/9/LA4CS-Chapter-11.pdf"
+server_url = f"gophers://localhost:{args.port}/9/{file_name}"
 
 download_times = []
 num_downloads = args.num_downloads
