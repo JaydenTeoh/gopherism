@@ -24,6 +24,7 @@ settings = {
 
     # Comments
     'comments_path': '/comment',  # Path to view comments
+    'comments_add_path': '/add-comment',  # Path to add a comment
     
     # Below lines can be disabled by setting them to None
     'root_text': 'Back to root',
@@ -119,31 +120,50 @@ def alt(request):
                     except:
                         pass
         return menu
-    elif request.path.startswith(settings['comments_path']):
+    
+    elif request.path.startswith(settings['comments_add_path']):
         # Append the new comment (from `query`) to the comments list
         if request.query:
             add_comment(request.query)
+            print('Comment added:', request.query)
             menu = [Item(text="Comment added! Thank you."),
-                    Item(itype='1', text="View comments", path="/", host=request.host, port=request.port)]
+                    Item(itype='7', text="View comments", path=settings['comments_path'], host=request.host, port=request.port)]
+            return menu
         else:
             # If no comment text was entered, prompt the user again
             menu = [Item(text="No comment provided! Please try again."),
-                    Item(itype='7', text="Add a comment.", path=settings['comments_path'], host=request.host, port=request.port)]
+                    Item(itype='7', text="Add a comment.", path=settings['comments_add_path'], host=request.host, port=request.port)]
             return menu
-
+        
+    elif request.path.startswith(settings['comments_path']):
         # Default path to view comments
-        menu = [Item(text='Welcome to the Comment Section!'),
+        menu = [Item(text="-------------------------------"),
+                Item(text='Welcome to the Comment Section!'),
+                Item(text="-------------------------------"),
                 Item(),  # Blank line
-                Item(itype='7', text="Add a comment.", path=settings['comments_path'], host=request.host, port=request.port),
-                Item()]  # Blank line
-
+                Item(itype='7', text="Add a comment.", path=settings['comments_add_path'], host=request.host, port=request.port),
+                Item(),  # Blank line
+                Item(text="Comments:"),  # Section header
+                Item(text="-------------------------------")]
         comments = get_comments()
         if not comments:
             menu.append(gopher.Item(text="There are no messages yet... be the first!"))
         else:
             for entry in comments:
                 menu.append(gopher.Item(text=str(entry)))
+        menu.append(gopher.Item(text="-------------------------------"))
         return menu
+    
+        # # Append the new comment (from `query`) to the comments list
+        # if request.query:
+        #     add_comment(request.query)
+        #     menu = [Item(text="Comment added! Thank you."),
+        #             Item(itype='1', text="View comments", path="/", host=request.host, port=request.port)]
+        # else:
+        #     # If no comment text was entered, prompt the user again
+        #     menu = [Item(text="No comment provided! Please try again."),
+        #             Item(itype='7', text="Add a comment.", path=settings['comments_path'], host=request.host, port=request.port)]
+        #     return menu
     else:
         e = copy.copy(errors['404'])
         e.text = e.text.format(request.path)
