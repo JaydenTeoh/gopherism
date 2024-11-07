@@ -11,7 +11,7 @@ args = parser.parse_args()
 # File path and server URL
 file_name = "LA4CS-Chapter-11.pdf"
 if args.port == 443: # using tls port
-    server_url = f"gophers://localhost/9/{file_name}"
+    server_url = f"gophers://localhost:{args.port}/9/{file_name}"
 else: # using tcp port only
     server_url = f"gopher://localhost:{args.port}/9/{file_name}"
 

@@ -65,11 +65,13 @@ _ABBREVS = {
 
 # Programs to handle different item types
 _ITEMTYPE_TO_MIME = {
+    "i":    "text/plain",
     "1":    "text/plain",
     "0":    "text/plain",
     "7":    "text/plain",
     "h":    "text/html",
     "g":    "image/gif",
+    "9":   "application/pdf",
 }
 
 _MIME_HANDLERS = {
@@ -272,7 +274,7 @@ class GopherClient(cmd.Cmd):
         self.waypoints = []
 
         self.options = {
-            "color_menus" : False,
+            "color_menus" : True,
             "debug" : debug,
             "encoding" : "iso-8859-1",
             "ipv6" : True,

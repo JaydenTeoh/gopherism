@@ -699,9 +699,11 @@ Note that clients may refuse to connect to a self-signed certificate.
                                     response += f'<div><a href="/pub/{item_path}">{label}</a></div>'
                                 elif item_type == 'i':  # Informational text
                                     response += f'<pre>{label}<br/></pre>'  # Line break for 'i' items
-                                else:  # Fallback for unknown types
+                                elif item_type in ('h', '9', 'I', '7', 's', 'g', 's'):
                                     item_path = item_path.strip('/')
                                     response += f'<div><a href="/{item_path}">{label}</a></div>'
+                                else:  # Fallback for unknown types
+                                    response += f'<pre>{label}</pre>'
                     response += "</div>"
                     return response, "text/html"
                 else:
