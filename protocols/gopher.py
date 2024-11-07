@@ -310,7 +310,7 @@ mime_starts_with = {
     'audio/x-wav': 's',
     'image/gif': 'g',
     'text/html': 'h',
-    'application/pdf': '9'
+    'application/pdf': 'P'
 }
 
 errors = {
@@ -699,7 +699,7 @@ Note that clients may refuse to connect to a self-signed certificate.
                                     response += f'<div><a href="/pub/{item_path}">{label}</a></div>'
                                 elif item_type == 'i':  # Informational text
                                     response += f'<pre>{label}<br/></pre>'  # Line break for 'i' items
-                                elif item_type in ('h', '9', 'I', '7', 's', 'g', 's'):
+                                elif item_type in ('h', 'P', 'I', '7', 's', 'g', 's'):
                                     item_path = item_path.strip('/')
                                     response += f'<div><a href="/{item_path}">{label}</a></div>'
                                 else:  # Fallback for unknown types

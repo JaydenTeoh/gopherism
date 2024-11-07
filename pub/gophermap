@@ -11,7 +11,7 @@
 1About page	/about	127.0.0.1	70
 7Search for all types	/search
 7Add a comment	/comment
-9Download pdf	/LA4CS-Chapter-11.pdf	127.0.0.1	70
+PDownload pdf	/LA4CS-Chapter-11.pdf	127.0.0.1	70
 0Readme	/readme.txt	127.0.0.1	70
 hDownload HTML	/test.html	127.0.0.1	70
 IDownload image	/gopher.png	127.0.0.1	70

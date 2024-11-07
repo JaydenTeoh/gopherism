@@ -71,16 +71,16 @@ _ITEMTYPE_TO_MIME = {
     "7":    "text/plain",
     "h":    "text/html",
     "g":    "image/gif",
-    "9":   "application/pdf",
+    "P":   "application/pdf",
 }
 
 _MIME_HANDLERS = {
-    "application/pdf":      "start %s",
-    "audio/mpeg":           "start %s",
-    "audio/ogg":            "start %s",
-    "image/*":              "start %s",
-    "text/*":               "cat %s",
-    "text/html":            "cat %s",
+    "application/pdf":      "xpdf %s" if sys.platform != "win32" else "start %s",  # Windows uses default PDF app with "start"
+    "audio/mpeg":           "mpg123 %s" if sys.platform != "win32" else "start %s", # Windows can use native players
+    "audio/ogg":            "ogg123 %s" if sys.platform != "win32" else "start %s", # Same as above
+    "image/*":              "feh %s" if sys.platform != "win32" else "start %s",    # "start" uses the default image viewer on Windows
+    "text/*":               "cat %s" if sys.platform != "win32" else "type %s",     # Windows equivalent of "cat" is "type"
+    "text/html":            "lynx -dump -force_html %s" if sys.platform != "win32" else "start %s", # Use default browser on Windows
 }
 
 # Item type formatting stuff
@@ -516,7 +516,7 @@ enable automatic encoding detection.""")
                 break
         else:
             # Use "xdg-open" as a last resort.
-            cmd_str = "start %s"
+            cmd_str = "xdg-open %s" if sys.platform != "win32" else "start %s"
         self._debug("Using handler: %s" % cmd_str)
         return cmd_str
 
