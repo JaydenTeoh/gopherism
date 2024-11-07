@@ -84,8 +84,12 @@ def format_comments_as_table(comments):
     col_widths = [max(col_widths[i], len(headers[i])) for i in range(len(headers))]
 
     # Create header and separator rows
-    header_row = f"| {' | '.join(headers[i].ljust(col_widths[i]) for i in range(len(headers)))} |"
-    separator_row = f"+{'-+-'.join('-' * (col_widths[i] + 1) for i in range(len(headers)))}+"
+    temp = f"| {' | '.join(headers[i].ljust(col_widths[i]) for i in range(len(headers)))} |"
+    header_row = "\033[38;2;255;255;0m\033[48;2;128;0;128m" + temp + "\033[0m"
+    # header_row = f"| {' | '.join(headers[i].ljust(col_widths[i]) for i in range(len(headers)))} |"
+    temp2 = f"+{'-+-'.join('-' * (col_widths[i] + 1) for i in range(len(headers)))}+"
+    separator_row = "\033[38;2;255;255;0m\033[48;2;128;0;128m" + temp2 + "\033[0m"
+    # separator_row = f"+{'-+-'.join('-' * (col_widths[i] + 1) for i in range(len(headers)))}+"
 
     # Format each row of comments with an auto-incrementing ID
     formatted_comments = [
@@ -162,7 +166,7 @@ def alt(request):
         
     elif request.path.startswith(settings['comments_path']):
         # Default path to view comments
-        menu = [Item(text="-------------------------------"),
+        menu = [Item(text="\033[31m-------------------------------\033[0m"),
                 Item(text='Welcome to the Comment Section!'),
                 Item(text="-------------------------------"),
                 Item(itype='1', text=settings['root_text'], path='/', host=request.host, port=request.port),
@@ -178,7 +182,8 @@ def alt(request):
             # Format comments as a table and add each line as a separate item
             table_lines = format_comments_as_table(comments)
             for line in table_lines:
-                menu.append(gopher.Item(text=line))
+                entry = "\033[1;32;40m" + line + "\033[0m"
+                menu.append(gopher.Item(text=entry))
             menu.append(Item())
         return menu
     
