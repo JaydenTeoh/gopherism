@@ -72,6 +72,31 @@ def get_comments():
     conn.close()
     return comments
 
+def format_comments_as_table(comments):
+    # Define headers
+    headers = ["ID", "Comment"]
+
+    # Determine the width of each column, accounting for the ID column and comment length
+    col_widths = [
+        max(len(str(index + 1)) for index in range(len(comments))) if comments else len(headers[0]),
+        max(len(comment) for comment in comments) if comments else len(headers[1])
+    ]
+    col_widths = [max(col_widths[i], len(headers[i])) for i in range(len(headers))]
+
+    # Create header and separator rows
+    header_row = f"| {' | '.join(headers[i].ljust(col_widths[i]) for i in range(len(headers)))} |"
+    separator_row = f"+{'-+-'.join('-' * (col_widths[i] + 1) for i in range(len(headers)))}+"
+
+    # Format each row of comments with an auto-incrementing ID
+    formatted_comments = [
+        f"| {str(index + 1).ljust(col_widths[0])} | {comment.ljust(col_widths[1])} |"
+        for index, comment in enumerate(comments)
+    ]
+
+    # Return the table as a list of lines
+    return [separator_row, header_row, separator_row] + formatted_comments + [separator_row]
+
+
 def alt(request):
     if request.path.startswith(settings['search_path']):
         typestring = request.path.replace(settings['search_path'], '').replace('/', '')
@@ -127,7 +152,7 @@ def alt(request):
             add_comment(request.query)
             print('Comment added:', request.query)
             menu = [Item(text="Comment added! Thank you."),
-                    Item(itype='7', text="View comments", path=settings['comments_path'], host=request.host, port=request.port)]
+                    Item(itype='1', text="View comments", path=settings['comments_path'], host=request.host, port=request.port)]
             return menu
         else:
             # If no comment text was entered, prompt the user again
@@ -140,18 +165,21 @@ def alt(request):
         menu = [Item(text="-------------------------------"),
                 Item(text='Welcome to the Comment Section!'),
                 Item(text="-------------------------------"),
+                Item(itype='1', text=settings['root_text'], path='/', host=request.host, port=request.port),
                 Item(),  # Blank line
                 Item(itype='7', text="Add a comment.", path=settings['comments_add_path'], host=request.host, port=request.port),
                 Item(),  # Blank line
                 Item(text="Comments:"),  # Section header
-                Item(text="-------------------------------")]
+                ]
         comments = get_comments()
         if not comments:
             menu.append(gopher.Item(text="There are no messages yet... be the first!"))
         else:
-            for entry in comments:
-                menu.append(gopher.Item(text=str(entry)))
-        menu.append(gopher.Item(text="-------------------------------"))
+            # Format comments as a table and add each line as a separate item
+            table_lines = format_comments_as_table(comments)
+            for line in table_lines:
+                menu.append(gopher.Item(text=line))
+            menu.append(Item())
         return menu
     
         # # Append the new comment (from `query`) to the comments list

@@ -65,8 +65,8 @@ def trim_menu(menu):
 def populate(parentNode, request):
     global gophertree, openNodes
 
-    window.FindElement('-QUERY-').update(request.url())
-    window.FindElement('-LOADING-').update(visible=True)
+    window.find_element('-QUERY-').update(request.url())
+    window.find_element('-LOADING-').update(visible=True)
 
     if not parentNode in openNodes:
         passes = 0
@@ -108,9 +108,9 @@ def populate(parentNode, request):
 
             openNodes.append(parentNode)
 
-            window.FindElement('_TREE_').Update(gophertree)
+            window.find_element('_TREE_').Update(gophertree)
 
-    window.FindElement('-LOADING-').update(visible=False)
+    window.find_element('-LOADING-').update(visible=False)
 
 gui_queue = queue.Queue()
 
@@ -133,10 +133,10 @@ def dlPopup(url):
 def go(url):
     global gophertree, openNodes, loadedTextURL
 
-    window.FindElement('-LOADING-').update(visible=True)
+    window.find_element('-LOADING-').update(visible=True)
 
     req = gopher.parse_url(url)
-    window.FindElement('-QUERY-').update(req.url())
+    window.find_element('-QUERY-').update(req.url())
     if req.type in texttypes:
         if req.type in ['1', '7']:
             gophertree = sg.TreeData()
@@ -150,16 +150,16 @@ def go(url):
             try:
                 resp = req.get()
                 loadedTextURL = req.url()
-                window.FindElement('-OUTPUT-').update(resp.text())
+                window.find_element('-OUTPUT-').update(resp.text())
             except:
                 sg.popup("We're sorry!", req.url() + ' could not be fetched. Try again later.')
     else:
         dlpath = dlPopup(req.url())
         if not dlpath is None:
-            window.FindElement('-DOWNLOADS-').update(value='Downloading {}'.format(dlpath))
+            window.find_element('-DOWNLOADS-').update(value='Downloading {}'.format(dlpath))
             threading.Thread(target=download_thread, args=(req, dlpath, gui_queue), daemon=True).start()
 
-    window.FindElement('-LOADING-').update(visible=False)
+    window.find_element('-LOADING-').update(visible=False)
 
 def plural(x):
     if x > 1 or x < 1: 
@@ -177,7 +177,7 @@ while True:     # The Event Loop
             previousevent = None
             # DOUBLE CLICK
             # TODO: cooldown
-            window.FindElement('-LOADING-').update(visible=True)
+            window.find_element('-LOADING-').update(visible=True)
 
             url = value['_TREE_'][0]
 
@@ -202,7 +202,7 @@ while True:     # The Event Loop
                     elif req.type != 'i':
                         go(req.url())
 
-                    window.FindElement('-LOADING-').update(visible=False)
+                    window.find_element('-LOADING-').update(visible=False)
                 else:
                     os.startfile(url)
         previousvalue = value
@@ -235,8 +235,8 @@ while True:     # The Event Loop
         message = None              # break from the loop if no more messages are queued up
     # if message received from queue, display the message in the Window
     if message:
-        window.FindElement('-DOWNLOADS-').update(value='')
+        window.find_element('-DOWNLOADS-').update(value='')
         if sg.popup_yes_no('Finished downloading {}. Would you like to open the downloaded file?'.format(message)):
             os.startfile(message)
-    window.FindElement('-CACHE-').update(value='{} menu{} in cache.'.format(len(cache), plural(len(cache))))
+    window.find_element('-CACHE-').update(value='{} menu{} in cache.'.format(len(cache), plural(len(cache))))
 window.close()
