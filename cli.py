@@ -5,6 +5,7 @@ import json
 import copy
 import protocols.gopher as gopher
 from protocols.gopher import Item, parse_url, parse_menu, errors
+import sqlite3
 
 settings = {
     # Pituophis server options
@@ -22,7 +23,6 @@ settings = {
     'allow_empty_queries': False,  # Whether to allow empty search queries
 
     # Comments
-    'comments': [],  # Comments to display
     'comments_path': '/comment',  # Path to view comments
     
     # Below lines can be disabled by setting them to None
@@ -37,6 +37,39 @@ settings = {
 if os.path.isfile(settings['index']):
     with open(settings['index'], 'r') as fp:
         db = json.load(fp)
+
+def init_db():
+    # Connect to the SQLite database (or create it if it doesn't exist)
+    conn = sqlite3.connect('comments.db')
+    cursor = conn.cursor()
+
+    # Create a comments table if it doesn't exist
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS comments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            comment TEXT NOT NULL
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+# Call this function once at the start of your application
+init_db()
+
+def add_comment(text):
+    conn = sqlite3.connect('comments.db')
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO comments (comment) VALUES (?)', (text,))
+    conn.commit()
+    conn.close()
+
+def get_comments():
+    conn = sqlite3.connect('comments.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT comment FROM comments')
+    comments = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    return comments
 
 def alt(request):
     if request.path.startswith(settings['search_path']):
@@ -89,7 +122,7 @@ def alt(request):
     elif request.path.startswith(settings['comments_path']):
         # Append the new comment (from `query`) to the comments list
         if request.query:
-            settings['comments'].append(request.query)
+            add_comment(request.query)
             menu = [Item(text="Comment added! Thank you."),
                     Item(itype='1', text="View comments", path="/", host=request.host, port=request.port)]
         else:
@@ -104,13 +137,12 @@ def alt(request):
                 Item(itype='7', text="Add a comment.", path=settings['comments_path'], host=request.host, port=request.port),
                 Item()]  # Blank line
 
-        # Display all comments if any exist
-        if len(settings['comments']) == 0:
-            menu.append(Item(text="There are no messages yet... be the first!"))
+        comments = get_comments()
+        if not comments:
+            menu.append(gopher.Item(text="There are no messages yet... be the first!"))
         else:
-            for entry in settings['comments']:
-                menu.append(Item(text=str(entry)))
-
+            for entry in comments:
+                menu.append(gopher.Item(text=str(entry)))
         return menu
     else:
         e = copy.copy(errors['404'])

@@ -1,4 +1,7 @@
 import protocols.gopher as gopher
+from cli import init_db
+
+init_db()
 
 def alt(request):
     if request.path == '/':
