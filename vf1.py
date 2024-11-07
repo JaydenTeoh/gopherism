@@ -93,6 +93,7 @@ _ITEMTYPE_TITLES = {
     "s":        " <SND>",
     "I":        " <IMG>",
     "T":        " <TEL>",
+    "P":        " <PDF>",
 }
 
 _ANSI_COLORS = {
@@ -117,6 +118,7 @@ _ITEMTYPE_COLORS = {
     "s":        _ANSI_COLORS["cyan"],     # Sound
     "I":        _ANSI_COLORS["cyan"],     # Gif
     "T":        _ANSI_COLORS["purple"],   # Telnet
+    "P":        _ANSI_COLORS["yellow"],      # PDF
 }
 
 CRLF = '\r\n'
