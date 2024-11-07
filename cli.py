@@ -188,7 +188,7 @@ else:
         if '-d' in sys.argv or '--directory' in sys.argv:
             pub_dir = sys.argv[sys.argv.index('-d') + 1]
         # alternate handler
-        alt_handler = False
+        alt_handler = True
         if '-A' in sys.argv or '--alt-handler' in sys.argv:
             print('loading alt handler')
             alt_handler = alt
