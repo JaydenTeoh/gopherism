@@ -4,6 +4,7 @@ import protocols.gopher as gopher
 import PySimpleGUI as sg
 import pyperclip
 import os
+import re
 
 # This is a graphical Gopher client in under 250 lines of code, implemented with Pituophis and PySimpleGUI for an interface. Pyperclip is used for the "Copy URL" feature.
 # A tree is used for loading in menus, similar to the likes of WSGopher32 and Cyberdog. Backlinks are cut out, and menus are trimmed of blank selectors. Threaded binary downloads are supported as well.
@@ -25,6 +26,63 @@ icons = {'1': b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsSAAAL
 icons['p'] = icons['I'] # pngs
 
 texttypes = ['0', '1', '7', 'h', 'M']
+
+# Regular expression to detect ANSI color codes
+ANSI_COLOR_RE = re.compile(r'\033\[(\d+);(\d+);(\d+)m')
+
+ANSI_COLORS = {
+    (0, 0, 0): '#000000' ,  # Black
+    (255, 191, 0): '#FFBF00',  # Amber
+    (0, 255, 0): '#00FF00',   # Bright green
+    (255, 255, 255): '#FFFFFF',  # White
+    (0, 0, 255): '#0000FF',   # Blue
+    (255, 0, 0): '#FF0000',   # Red
+    (255, 255, 0): '#FFFF00', # Yellow
+    # Add more colors as needed
+}
+
+def parse_ansi_colors(text):
+    """
+    Parses the text for ANSI color codes and splits it into segments.
+    Each segment is a tuple (text, color) where color is a hex color code.
+    """
+    segments = []
+    last_end = 0
+    current_color = "#FFFFFF"  # Default color is white
+
+    for match in ANSI_COLOR_RE.finditer(text):
+        start, end = match.span()
+
+        # Extract RGB from ANSI code and map to hex color
+        rgb = tuple(int(match.group(i)) for i in range(1, 4))
+        color = ANSI_COLORS.get(rgb, current_color)
+
+        # Add text before this ANSI code with the current color
+        if start > last_end:
+            segments.append((text[last_end:start], current_color))
+
+        # Update color and position
+        current_color = color
+        last_end = end
+
+    # Add remaining text after last ANSI code
+    if last_end < len(text):
+        segments.append((text[last_end:], current_color))
+
+    return segments
+
+def display_text_with_colors(text):
+    """
+    Displays parsed text with colors applied. Clears the Multiline element
+    and prints each segment in the respective color.
+    """
+    segments = parse_ansi_colors(text)
+    window['-OUTPUT-'].update('')  # Clear output area
+
+    # Print each segment in its designated color
+    for segment, color in segments:
+        window['-OUTPUT-'].print(segment, text_color=color, end='')
+
 
 gophertree = sg.TreeData()
 
@@ -133,12 +191,15 @@ def dlPopup(url):
 def go(url):
     global gophertree, openNodes, loadedTextURL
 
-    window.find_element('-LOADING-').update(visible=True)
+    window['-LOADING-'].update(visible=True)
 
+    # Parse the Gopher URL
     req = gopher.parse_url(url)
-    window.find_element('-QUERY-').update(req.url())
+    window['-QUERY-'].update(req.url())
+
+    # Check if the request type is one of the text-based types
     if req.type in texttypes:
-        if req.type in ['1', '7']:
+        if req.type in ['1', '7']:  # Handle menu-based types (directories)
             gophertree = sg.TreeData()
             gophertree.insert('', key=req.url(), text=req.url(),
                               values=[req.url()], icon=icons[req.type])
@@ -146,20 +207,27 @@ def go(url):
             history.append(req.url())
             openNodes = []
             populate(parentNode, req)
-        else:
+        else:  # Handle content-based types (e.g., plain text)
             try:
+                # Retrieve the response content
                 resp = req.get()
                 loadedTextURL = req.url()
-                window.find_element('-OUTPUT-').update(resp.text())
-            except:
-                sg.popup("We're sorry!", req.url() + ' could not be fetched. Try again later.')
+
+                # Display text with ANSI colors applied
+                display_text_with_colors(resp.text())
+            except Exception as e:
+                sg.popup("We're sorry!", f"{req.url()} could not be fetched. Try again later.\nError: {e}")
     else:
+        # For binary or downloadable files, prompt user to save the file
         dlpath = dlPopup(req.url())
-        if not dlpath is None:
-            window.find_element('-DOWNLOADS-').update(value='Downloading {}'.format(dlpath))
+        if dlpath:
+            window['-DOWNLOADS-'].update(f'Downloading {dlpath}')
             threading.Thread(target=download_thread, args=(req, dlpath, gui_queue), daemon=True).start()
 
-    window.find_element('-LOADING-').update(visible=False)
+    # Hide the loading indicator once done
+    window['-LOADING-'].update(visible=False)
+
+
 
 def plural(x):
     if x > 1 or x < 1: 

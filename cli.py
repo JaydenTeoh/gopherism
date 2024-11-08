@@ -7,6 +7,26 @@ import protocols.gopher as gopher
 from protocols.gopher import Item, parse_url, parse_menu, errors
 import sqlite3
 
+# Convert RGB values to ANSI color codes
+def rgb_color(r, g, b, background=False):
+    """
+    Returns the ANSI escape code for an RGB color.
+    Set background=True for background color; otherwise, it's a text color.
+    """
+    color_type = 48 if background else 38  # 38 for foreground, 48 for background
+    return f"\033[{color_type};2;{r};{g};{b}m"
+
+
+# Example usage in cli.py
+black_background = rgb_color(0, 0, 0, background=True) # Black background
+blue_background = rgb_color(0, 0, 139, background=True)  # Dark Blue
+amber_text = rgb_color(255, 191, 0)  # Amber text
+white_text = rgb_color(255, 255, 255)  # White text
+greenish_gray_text = rgb_color(169, 169, 169)
+green_text = rgb_color(0, 255, 0)
+reset = "\033[0m"  # Reset to default colors
+
+# Required for pituophis gopher server
 settings = {
     # Pituophis server options
     'host': 'your.live.host',
@@ -85,10 +105,10 @@ def format_comments_as_table(comments):
 
     # Create header and separator rows
     temp = f"| {' | '.join(headers[i].ljust(col_widths[i]) for i in range(len(headers)))} |"
-    header_row = "\033[38;2;255;255;0m\033[48;2;128;0;128m" + temp + "\033[0m"
+    header_row = f"{black_background}{green_text}" + temp + f"{reset}"
     # header_row = f"| {' | '.join(headers[i].ljust(col_widths[i]) for i in range(len(headers)))} |"
     temp2 = f"+{'-+-'.join('-' * (col_widths[i] + 1) for i in range(len(headers)))}+"
-    separator_row = "\033[38;2;255;255;0m\033[48;2;128;0;128m" + temp2 + "\033[0m"
+    separator_row = f"{black_background}{green_text}" + temp2 + f"{reset}"
     # separator_row = f"+{'-+-'.join('-' * (col_widths[i] + 1) for i in range(len(headers)))}+"
 
     # Format each row of comments with an auto-incrementing ID
@@ -166,9 +186,9 @@ def alt(request):
         
     elif request.path.startswith(settings['comments_path']):
         # Default path to view comments
-        menu = [Item(text="\033[31m-------------------------------\033[0m"),
-                Item(text='Welcome to the Comment Section!'),
-                Item(text="-------------------------------"),
+        menu = [Item(text=f"{black_background}{amber_text}-------------------------------{reset}"),
+                Item(text=f'{black_background}{greenish_gray_text}Welcome to the Comment Section!{reset}'),
+                Item(text=f"{black_background}{amber_text}-------------------------------{reset}"),
                 Item(itype='1', text=settings['root_text'], path='/', host=request.host, port=request.port),
                 Item(),  # Blank line
                 Item(itype='7', text="Add a comment.", path=settings['comments_add_path'], host=request.host, port=request.port),
@@ -182,7 +202,7 @@ def alt(request):
             # Format comments as a table and add each line as a separate item
             table_lines = format_comments_as_table(comments)
             for line in table_lines:
-                entry = "\033[1;32;40m" + line + "\033[0m"
+                entry = f"{black_background}{green_text}" + line + f"{reset}"
                 menu.append(gopher.Item(text=entry))
             menu.append(Item())
         return menu
