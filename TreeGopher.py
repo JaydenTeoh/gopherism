@@ -92,9 +92,9 @@ context_menu = ['', '&Copy URL']
 text_menu = ['', ['&Save...', '&Copy File URL']]
 
 gophermenu_layout = sg.Tree(data=gophertree, headings=[], change_submits=True,
-                              auto_size_columns=True, num_rows=26, col0_width=80, max_col_width=200, key='_TREE_', show_expanded=True, enable_events=True, right_click_menu=context_menu, font='Consolas 10', background_color='#fff', text_color='#000')
+                              auto_size_columns=True, num_rows=26, col0_width=115, max_col_width=200, key='_TREE_', show_expanded=True, enable_events=True, right_click_menu=context_menu, font='Consolas 10', background_color='#fff', text_color='#000')
 
-plaintext_layout = sg.Multiline(key='-OUTPUT-', size=(80, 35), font=('Consolas 10'), background_color='#fff', right_click_menu=text_menu, autoscroll=False, disabled=True, metadata='', rstrip=False, wrap_lines=False)
+plaintext_layout = sg.Multiline(key='-OUTPUT-', size=(35, 35), font=('Consolas 10'), background_color='#fff', right_click_menu=text_menu, autoscroll=False, disabled=True, metadata='', rstrip=False, wrap_lines=False)
 
 layout = [[gophermenu_layout, plaintext_layout],
           [sg.Button('<'), sg.Input(size=(84, 5), key='-QUERY-', do_not_clear=True, default_text="gopher://gopherproject.org/1/", enable_events=True), sg.Button('Go'), sg.Button('Clear Cache'), sg.Checkbox('Use hierarchy', key='-USETREE-', default=True), sg.Text('...', key='-LOADING-', visible=False)],
