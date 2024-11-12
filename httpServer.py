@@ -1,5 +1,7 @@
-from flask import Flask, send_file, abort, render_template_string
+from flask import Flask, send_file, abort, render_template_string, g, request
 import os
+import argparse
+import time
 
 app = Flask(__name__)
 
@@ -46,13 +48,38 @@ def download_file(filename):
         abort(404)  # File not found
 
 if __name__ == '__main__':
+    # Set up argument parsing for the TLS option
+    parser = argparse.ArgumentParser(description="Run Flask server with optional TLS.")
+    parser.add_argument("-tls", action="store_true", help="Enable TLS for HTTPS")
+    args = parser.parse_args()
+
     # Ensure the directory exists
     if not os.path.exists(FILE_DIRECTORY):
         os.makedirs(FILE_DIRECTORY)
-    
-    # Paths to your certificate and private key files
-    cert_file = 'tls/cacert.pem'  # Replace with your certificate file path
-    key_file = 'tls/privkey.pem'    # Replace with your private key file path
 
-    # Start the HTTPS server with TLS enabled
-    app.run(host='0.0.0.0', port=8443, ssl_context=(cert_file, key_file))
+    # Check if TLS is enabled via the flag
+    if args.tls:
+        # Paths to your certificate and private key files
+        cert_file = 'tls/cacert.pem'  # Replace with your certificate file path
+        key_file = 'tls/privkey.pem'  # Replace with your private key file path
+
+        # Start the HTTPS server with TLS enabled
+        app.run(host='0.0.0.0', port=8443, ssl_context=(cert_file, key_file))
+    else:
+        # Start the HTTP server
+        app.run(host='0.0.0.0', port=8080)
+
+@app.before_request
+def start_bandwidth_monitor():
+    # Record the start time and reset the byte count
+    g.start_time = time.time()
+    g.byte_count = 0
+
+@app.after_request
+def end_bandwidth_monitor(response):
+    # Calculate the data transferred by looking at the response length
+    g.byte_count = len(response.get_data())
+    duration = time.time() - g.start_time
+    protocol = "HTTPS" if request.is_secure else "HTTP"
+    print(f"{protocol} - Path: {request.path} - Data sent: {g.byte_count} bytes - Time: {duration:.2f}s")
+    return response

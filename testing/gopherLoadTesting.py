@@ -12,11 +12,12 @@ parser.add_argument("-t", "--threads", type=int, default=5, help="Number of conc
 args = parser.parse_args()
 
 # File path and server URL
-file_name = "LA4CS-Chapter-11.pdf"
+# file_name = "LA4CS-Chapter-11.pdf"
 if args.port == 443:  # using TLS port
-    server_url = f"gophers://localhost:{args.port}/9/{file_name}"
+    # server_url = f"gophers://localhost:{args.port}/9/{file_name}"
+    server_url = f"gophers://localhost:{args.port}/0"
 else:  # using TCP port only
-    server_url = f"gopher://localhost:{args.port}/9/{file_name}"
+    server_url = f"gopher://localhost:{args.port}/0"
 
 # Output target to discard data
 output_target = "NUL" if os.name == "nt" else "/dev/null"

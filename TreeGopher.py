@@ -4,6 +4,7 @@ import protocols.gopher as gopher
 import PySimpleGUI as sg
 import pyperclip
 import os
+from cli import get_comments
 
 # This is a graphical Gopher client in under 250 lines of code, implemented with Pituophis and PySimpleGUI for an interface. Pyperclip is used for the "Copy URL" feature.
 # A tree is used for loading in menus, similar to the likes of WSGopher32 and Cyberdog. Backlinks are cut out, and menus are trimmed of blank selectors. Threaded binary downloads are supported as well.
@@ -37,16 +38,39 @@ gophermenu_layout = sg.Tree(data=gophertree, headings=[], change_submits=True,
 
 plaintext_layout = sg.Multiline(key='-OUTPUT-', size=(80, 35), font=('Consolas 10'), background_color='#fff', right_click_menu=text_menu, autoscroll=False, disabled=True, metadata='')
 
-layout = [[gophermenu_layout, plaintext_layout],
-          [sg.Button('<'), sg.Input(size=(84, 5), key='-QUERY-', do_not_clear=True, default_text="gopher://gopherproject.org/1/", enable_events=True), sg.Button('Go'), sg.Button('Clear Cache'), sg.Checkbox('Use hierarchy', key='-USETREE-', default=True), sg.Text('...', key='-LOADING-', visible=False)],
-           [sg.StatusBar(text='0 menus in cache.', key='-CACHE-'), sg.Text('', key='-DOWNLOADS-', visible=True, size=(60, 1))]]
+comments_table_layout = [
+    [sg.Table(values=[], headings=['Comment'], 
+              display_row_numbers=True, 
+              auto_size_columns=True,
+              num_rows=10, 
+              key='-COMMENTS_TABLE-', 
+              enable_events=True)]
+]
 
+layout = [
+    [gophermenu_layout, plaintext_layout],
+    [sg.Button('<'), 
+     sg.Input(size=(84, 5), key='-QUERY-', do_not_clear=True, default_text="gopher://gopherproject.org/1/", enable_events=True), 
+     sg.Button('Go'), sg.Button('Clear Cache'), sg.Checkbox('Use hierarchy', key='-USETREE-', default=True), 
+     sg.Text('...', key='-LOADING-', visible=False)],
+    [sg.StatusBar(text='0 menus in cache.', key='-CACHE-'), sg.Text('', key='-DOWNLOADS-', visible=True, size=(60, 1))],
+    [sg.Frame('Comments', layout=comments_table_layout, visible=False, key='-COMMENTS_SECTION-')]  # New comments section
+]
 window = sg.Window('TreeGopher', layout, font=('Segoe UI', ' 13'), default_button_element_size=(8, 1))
 
 openNodes = []
 
 cache = {}
 loadedTextURL = ''
+
+def load_comments():
+    # Example comments; replace with actual comment retrieval logic
+    comments = get_comments()  # Assuming get_comments() retrieves a list of comments
+    comments_data = [[comment] for comment in comments]  # Each comment is a row
+    
+    # Update the table with comments
+    window['-COMMENTS_TABLE-'].update(values=comments_data)
+    window['-COMMENTS_SECTION-'].update(visible=True) 
 
 def trim_menu(menu):
     try:
@@ -137,7 +161,10 @@ def go(url):
 
     req = gopher.parse_url(url)
     window.FindElement('-QUERY-').update(req.url())
-    if req.type in texttypes:
+
+    if url.endswith('/comments'):
+        load_comments()
+    elif req.type in texttypes:
         if req.type in ['1', '7']:
             gophertree = sg.TreeData()
             gophertree.insert('', key=req.url(), text=req.url(),
