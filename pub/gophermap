@@ -9,6 +9,7 @@
 
 1Home page	/home	127.0.0.1	70
 1About page	/about	127.0.0.1	70
+1Insights	/insights	127.0.0.1	70
 7Search for all types	/search	127.0.0.1	70
 1View comments	/comment	127.0.0.1	70
 7Add a comment	/add-comment	127.0.0.1	70
