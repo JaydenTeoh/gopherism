@@ -9,7 +9,7 @@ pip3 install -r requirements.txt
 ## Guide
 Start the Gopher server using:
 ```
-python cli.py serve -H 127.0.0.1 -p 443 -d pub/ -tls -A
+python cli.py serve -H 127.0.0.1 -p 70 -d pub/ -A
 ```
 - `-H`: advertised host (default: 127.0.0.1)
 - `-p`: port to use for Gopher (default: 70)
@@ -19,11 +19,11 @@ python cli.py serve -H 127.0.0.1 -p 443 -d pub/ -tls -A
 - `-http_port`: port to use for HTTP (default: 8080)
 - `-A`: special handler to include database search and comment section
 
-To spin up a Gopher client, I am using [VF-1](https://git.sr.ht/~solderpunk/VF-1). After running the above CLI command, in a separate terminal, do:
+To spin up a Gopher client, U can use [TreeGopher](https://github.com/dotcomboom/Pituophis). After running the above command, in a separate terminal, do:
 ```
-python vf1.py
+python TreeGopher.py
 ```
-You should see the VF-1 command line Gopher client appear. To enable TLS encryption, type `tls`. To go to your hosted gopher site, enter `go gopher://localhost:<PORT>`. See the images below for an example interaction.
+The TreeGopher GUI client will open in a separate window. To visit the server we just spun up, visit gopher://127.0.0.1:70 (change the port number accordingly if using a different port)
 
 **Localhost**
 
