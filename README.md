@@ -27,12 +27,7 @@ The TreeGopher GUI client will open in a separate window. To visit the server we
 
 **Localhost**
 
-![VF-1 Localhost interaction](./assets/vf1_localhost_demo.png)
-
-**Public Gopher Site**
-
-
-![VF-1 Public interaction](./assets/vf1_public_demo.png)
+![TreeGopher Localhost interaction](./assets/gui_localhost_demo.png)
 
 
 ## Packet Capturing with Wireshark
