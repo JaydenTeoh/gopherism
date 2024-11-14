@@ -4,6 +4,7 @@ import protocols.gopher as gopher
 import PySimpleGUI as sg
 import pyperclip
 import os
+import re
 
 # This is a graphical Gopher client in under 250 lines of code, implemented with Pituophis and PySimpleGUI for an interface. Pyperclip is used for the "Copy URL" feature.
 # A tree is used for loading in menus, similar to the likes of WSGopher32 and Cyberdog. Backlinks are cut out, and menus are trimmed of blank selectors. Threaded binary downloads are supported as well.
@@ -26,6 +27,63 @@ icons['p'] = icons['I'] # pngs
 
 texttypes = ['0', '1', '7', 'h', 'M']
 
+# Regular expression to detect ANSI color codes
+ANSI_COLOR_RE = re.compile(r'\033\[(\d+);(\d+);(\d+)m')
+
+ANSI_COLORS = {
+    (0, 0, 0): '#000000' ,  # Black
+    (255, 191, 0): '#FFBF00',  # Amber
+    (0, 255, 0): '#00FF00',   # Bright green
+    (255, 255, 255): '#FFFFFF',  # White
+    (0, 0, 255): '#0000FF',   # Blue
+    (255, 0, 0): '#FF0000',   # Red
+    (255, 255, 0): '#FFFF00', # Yellow
+    # Add more colors as needed
+}
+
+def parse_ansi_colors(text):
+    """
+    Parses the text for ANSI color codes and splits it into segments.
+    Each segment is a tuple (text, color) where color is a hex color code.
+    """
+    segments = []
+    last_end = 0
+    current_color = "#FFFFFF"  # Default color is white
+
+    for match in ANSI_COLOR_RE.finditer(text):
+        start, end = match.span()
+
+        # Extract RGB from ANSI code and map to hex color
+        rgb = tuple(int(match.group(i)) for i in range(1, 4))
+        color = ANSI_COLORS.get(rgb, current_color)
+
+        # Add text before this ANSI code with the current color
+        if start > last_end:
+            segments.append((text[last_end:start], current_color))
+
+        # Update color and position
+        current_color = color
+        last_end = end
+
+    # Add remaining text after last ANSI code
+    if last_end < len(text):
+        segments.append((text[last_end:], current_color))
+
+    return segments
+
+def display_text_with_colors(text):
+    """
+    Displays parsed text with colors applied. Clears the Multiline element
+    and prints each segment in the respective color.
+    """
+    segments = parse_ansi_colors(text)
+    window['-OUTPUT-'].update('')  # Clear output area
+
+    # Print each segment in its designated color
+    for segment, color in segments:
+        window['-OUTPUT-'].print(segment, text_color=color, end='')
+
+
 gophertree = sg.TreeData()
 
 sg.theme('DarkTeal1')  # Add a touch of color
@@ -34,9 +92,9 @@ context_menu = ['', '&Copy URL']
 text_menu = ['', ['&Save...', '&Copy File URL']]
 
 gophermenu_layout = sg.Tree(data=gophertree, headings=[], change_submits=True,
-                              auto_size_columns=True, num_rows=26, col0_width=80, max_col_width=200, key='_TREE_', show_expanded=True, enable_events=True, right_click_menu=context_menu, font='Consolas 10', background_color='#fff', text_color='#000')
+                              auto_size_columns=True, num_rows=26, col0_width=115, max_col_width=200, key='_TREE_', show_expanded=True, enable_events=True, right_click_menu=context_menu, font='Consolas 10', background_color='#fff', text_color='#000')
 
-plaintext_layout = sg.Multiline(key='-OUTPUT-', size=(80, 35), font=('Consolas 10'), background_color='#fff', right_click_menu=text_menu, autoscroll=False, disabled=True, metadata='', rstrip=False, wrap_lines=False)
+plaintext_layout = sg.Multiline(key='-OUTPUT-', size=(35, 35), font=('Consolas 10'), background_color='#fff', right_click_menu=text_menu, autoscroll=False, disabled=True, metadata='', rstrip=False, wrap_lines=False)
 
 layout = [[gophermenu_layout, plaintext_layout],
           [sg.Button('<'), sg.Input(size=(84, 5), key='-QUERY-', do_not_clear=True, default_text="gopher://gopherproject.org/1/", enable_events=True), sg.Button('Go'), sg.Button('Clear Cache'), sg.Checkbox('Use hierarchy', key='-USETREE-', default=True), sg.Text('...', key='-LOADING-', visible=False)],
@@ -65,8 +123,8 @@ def trim_menu(menu):
 def populate(parentNode, request):
     global gophertree, openNodes
 
-    window.FindElement('-QUERY-').update(request.url())
-    window.FindElement('-LOADING-').update(visible=True)
+    window.find_element('-QUERY-').update(request.url())
+    window.find_element('-LOADING-').update(visible=True)
 
     if not parentNode in openNodes:
         passes = 0
@@ -108,9 +166,9 @@ def populate(parentNode, request):
 
             openNodes.append(parentNode)
 
-            window.FindElement('_TREE_').Update(gophertree)
+            window.find_element('_TREE_').Update(gophertree)
 
-    window.FindElement('-LOADING-').update(visible=False)
+    window.find_element('-LOADING-').update(visible=False)
 
 gui_queue = queue.Queue()
 
@@ -133,12 +191,15 @@ def dlPopup(url):
 def go(url):
     global gophertree, openNodes, loadedTextURL
 
-    window.FindElement('-LOADING-').update(visible=True)
+    window['-LOADING-'].update(visible=True)
 
+    # Parse the Gopher URL
     req = gopher.parse_url(url)
-    window.FindElement('-QUERY-').update(req.url())
+    window['-QUERY-'].update(req.url())
+
+    # Check if the request type is one of the text-based types
     if req.type in texttypes:
-        if req.type in ['1', '7']:
+        if req.type in ['1', '7']:  # Handle menu-based types (directories)
             gophertree = sg.TreeData()
             gophertree.insert('', key=req.url(), text=req.url(),
                               values=[req.url()], icon=icons[req.type])
@@ -146,20 +207,27 @@ def go(url):
             history.append(req.url())
             openNodes = []
             populate(parentNode, req)
-        else:
+        else:  # Handle content-based types (e.g., plain text)
             try:
+                # Retrieve the response content
                 resp = req.get()
                 loadedTextURL = req.url()
-                window.FindElement('-OUTPUT-').update(resp.text())
-            except:
-                sg.popup("We're sorry!", req.url() + ' could not be fetched. Try again later.')
+
+                # Display text with ANSI colors applied
+                display_text_with_colors(resp.text())
+            except Exception as e:
+                sg.popup("We're sorry!", f"{req.url()} could not be fetched. Try again later.\nError: {e}")
     else:
+        # For binary or downloadable files, prompt user to save the file
         dlpath = dlPopup(req.url())
-        if not dlpath is None:
-            window.FindElement('-DOWNLOADS-').update(value='Downloading {}'.format(dlpath))
+        if dlpath:
+            window['-DOWNLOADS-'].update(f'Downloading {dlpath}')
             threading.Thread(target=download_thread, args=(req, dlpath, gui_queue), daemon=True).start()
 
-    window.FindElement('-LOADING-').update(visible=False)
+    # Hide the loading indicator once done
+    window['-LOADING-'].update(visible=False)
+
+
 
 def plural(x):
     if x > 1 or x < 1: 
@@ -177,7 +245,7 @@ while True:     # The Event Loop
             previousevent = None
             # DOUBLE CLICK
             # TODO: cooldown
-            window.FindElement('-LOADING-').update(visible=True)
+            window.find_element('-LOADING-').update(visible=True)
 
             url = value['_TREE_'][0]
 
@@ -202,7 +270,7 @@ while True:     # The Event Loop
                     elif req.type != 'i':
                         go(req.url())
 
-                    window.FindElement('-LOADING-').update(visible=False)
+                    window.find_element('-LOADING-').update(visible=False)
                 else:
                     os.startfile(url)
         previousvalue = value
@@ -235,8 +303,8 @@ while True:     # The Event Loop
         message = None              # break from the loop if no more messages are queued up
     # if message received from queue, display the message in the Window
     if message:
-        window.FindElement('-DOWNLOADS-').update(value='')
+        window.find_element('-DOWNLOADS-').update(value='')
         if sg.popup_yes_no('Finished downloading {}. Would you like to open the downloaded file?'.format(message)):
             os.startfile(message)
-    window.FindElement('-CACHE-').update(value='{} menu{} in cache.'.format(len(cache), plural(len(cache))))
+    window.find_element('-CACHE-').update(value='{} menu{} in cache.'.format(len(cache), plural(len(cache))))
 window.close()

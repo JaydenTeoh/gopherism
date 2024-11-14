@@ -7,11 +7,12 @@
     \_____\/   \_____\/ \_\/     \__\/ \::\/ \_____\/ \_\/ \_\/\________\/ \_____\/ \__\/ \__\/
                                                                                                
 
-1Home page	/home	127.0.0.1	443
-1About page	/about	127.0.0.1	443
-7Search for all types	/search	127.0.0.1	443
-7Add a comment	/comment	127.0.0.1	443
-PDownload pdf	/LA4CS-Chapter-11.pdf	127.0.0.1	443
-0Readme	/readme.txt	127.0.0.1	443
-hDownload HTML	/test.html	127.0.0.1	443
-IDownload image	/gopher.png	127.0.0.1	443
+1Home page	/home	127.0.0.1	70
+1About page	/about	127.0.0.1	70
+7Search for all types	/search	127.0.0.1	70
+1View comments	/comment	127.0.0.1	70
+7Add a comment	/add-comment	127.0.0.1	70
+PDownload pdf	/LA4CS-Chapter-11.pdf	127.0.0.1	70
+0Readme	/readme.txt	127.0.0.1	70
+hDownload HTML	/test.html	127.0.0.1	70
+IDownload image	/gopher.png	127.0.0.1	70

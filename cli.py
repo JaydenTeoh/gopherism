@@ -7,6 +7,26 @@ import protocols.gopher as gopher
 from protocols.gopher import Item, parse_url, parse_menu, errors
 import sqlite3
 
+# Convert RGB values to ANSI color codes
+def rgb_color(r, g, b, background=False):
+    """
+    Returns the ANSI escape code for an RGB color.
+    Set background=True for background color; otherwise, it's a text color.
+    """
+    color_type = 48 if background else 38  # 38 for foreground, 48 for background
+    return f"\033[{color_type};2;{r};{g};{b}m"
+
+
+# Example usage in cli.py
+black_background = rgb_color(0, 0, 0, background=True) # Black background
+blue_background = rgb_color(0, 0, 139, background=True)  # Dark Blue
+amber_text = rgb_color(255, 191, 0)  # Amber text
+white_text = rgb_color(255, 255, 255)  # White text
+greenish_gray_text = rgb_color(169, 169, 169)
+green_text = rgb_color(0, 255, 0)
+reset = "\033[0m"  # Reset to default colors
+
+# Required for pituophis gopher server
 settings = {
     # Pituophis server options
     'host': 'your.live.host',
@@ -24,6 +44,7 @@ settings = {
 
     # Comments
     'comments_path': '/comment',  # Path to view comments
+    'comments_add_path': '/add-comment',  # Path to add a comment
     
     # Below lines can be disabled by setting them to None
     'root_text': 'Back to root',
@@ -70,6 +91,35 @@ def get_comments():
     comments = [row[0] for row in cursor.fetchall()]
     conn.close()
     return comments
+
+def format_comments_as_table(comments):
+    # Define headers
+    headers = ["ID", "Comment"]
+
+    # Determine the width of each column, accounting for the ID column and comment length
+    col_widths = [
+        max(len(str(index + 1)) for index in range(len(comments))) if comments else len(headers[0]),
+        max(len(comment) for comment in comments) if comments else len(headers[1])
+    ]
+    col_widths = [max(col_widths[i], len(headers[i])) for i in range(len(headers))]
+
+    # Create header and separator rows
+    temp = f"| {' | '.join(headers[i].ljust(col_widths[i]) for i in range(len(headers)))} |"
+    header_row = f"{black_background}{green_text}" + temp + f"{reset}"
+    # header_row = f"| {' | '.join(headers[i].ljust(col_widths[i]) for i in range(len(headers)))} |"
+    temp2 = f"+{'-+-'.join('-' * (col_widths[i] + 1) for i in range(len(headers)))}+"
+    separator_row = f"{black_background}{green_text}" + temp2 + f"{reset}"
+    # separator_row = f"+{'-+-'.join('-' * (col_widths[i] + 1) for i in range(len(headers)))}+"
+
+    # Format each row of comments with an auto-incrementing ID
+    formatted_comments = [
+        f"| {str(index + 1).ljust(col_widths[0])} | {comment.ljust(col_widths[1])} |"
+        for index, comment in enumerate(comments)
+    ]
+
+    # Return the table as a list of lines
+    return [separator_row, header_row, separator_row] + formatted_comments + [separator_row]
+
 
 def alt(request):
     if request.path.startswith(settings['search_path']):
@@ -119,31 +169,54 @@ def alt(request):
                     except:
                         pass
         return menu
-    elif request.path.startswith(settings['comments_path']):
+    
+    elif request.path.startswith(settings['comments_add_path']):
         # Append the new comment (from `query`) to the comments list
         if request.query:
             add_comment(request.query)
+            print('Comment added:', request.query)
             menu = [Item(text="Comment added! Thank you."),
-                    Item(itype='1', text="View comments", path="/", host=request.host, port=request.port)]
+                    Item(itype='1', text="View comments", path=settings['comments_path'], host=request.host, port=request.port)]
+            return menu
         else:
             # If no comment text was entered, prompt the user again
             menu = [Item(text="No comment provided! Please try again."),
-                    Item(itype='7', text="Add a comment.", path=settings['comments_path'], host=request.host, port=request.port)]
+                    Item(itype='7', text="Add a comment.", path=settings['comments_add_path'], host=request.host, port=request.port)]
             return menu
-
+        
+    elif request.path.startswith(settings['comments_path']):
         # Default path to view comments
-        menu = [Item(text='Welcome to the Comment Section!'),
+        menu = [Item(text=f"{black_background}{amber_text}-------------------------------{reset}"),
+                Item(text=f'{black_background}{greenish_gray_text}Welcome to the Comment Section!{reset}'),
+                Item(text=f"{black_background}{amber_text}-------------------------------{reset}"),
+                Item(itype='1', text=settings['root_text'], path='/', host=request.host, port=request.port),
                 Item(),  # Blank line
-                Item(itype='7', text="Add a comment.", path=settings['comments_path'], host=request.host, port=request.port),
-                Item()]  # Blank line
-
+                Item(itype='7', text="Add a comment.", path=settings['comments_add_path'], host=request.host, port=request.port),
+                Item(),  # Blank line
+                Item(text="Comments:"),  # Section header
+                ]
         comments = get_comments()
         if not comments:
             menu.append(gopher.Item(text="There are no messages yet... be the first!"))
         else:
-            for entry in comments:
-                menu.append(gopher.Item(text=str(entry)))
+            # Format comments as a table and add each line as a separate item
+            table_lines = format_comments_as_table(comments)
+            for line in table_lines:
+                entry = f"{black_background}{green_text}" + line + f"{reset}"
+                menu.append(gopher.Item(text=entry))
+            menu.append(Item())
         return menu
+    
+        # # Append the new comment (from `query`) to the comments list
+        # if request.query:
+        #     add_comment(request.query)
+        #     menu = [Item(text="Comment added! Thank you."),
+        #             Item(itype='1', text="View comments", path="/", host=request.host, port=request.port)]
+        # else:
+        #     # If no comment text was entered, prompt the user again
+        #     menu = [Item(text="No comment provided! Please try again."),
+        #             Item(itype='7', text="Add a comment.", path=settings['comments_path'], host=request.host, port=request.port)]
+        #     return menu
     else:
         e = copy.copy(errors['404'])
         e.text = e.text.format(request.path)
